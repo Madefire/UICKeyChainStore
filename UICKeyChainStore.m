@@ -271,7 +271,9 @@ static NSString *defaultService;
         accessGroup = [group copy];
         if (accessGroup) {
 #if !TARGET_IPHONE_SIMULATOR
-            [itemsToUpdate setObject:accessGroup forKey:(id)kSecAttrAccessGroup];
+            @synchronized(itemsToUpdate) {
+                [itemsToUpdate setObject:accessGroup forKey:(id)kSecAttrAccessGroup];
+            }
 #endif
         }
 		
@@ -341,7 +343,9 @@ static NSString *defaultService;
     if (!data) {
         [self removeItemForKey:key];
     } else {
-        [itemsToUpdate setObject:data forKey:key];
+        @synchronized(itemsToUpdate) {
+            [itemsToUpdate setObject:data forKey:key];
+        }
     }
 }
 
@@ -355,7 +359,9 @@ static NSString *defaultService;
 
 - (void)removeItemForKey:(NSString *)key {
     if ([itemsToUpdate objectForKey:key]) {
-        [itemsToUpdate removeObjectForKey:key];
+        @synchronized(itemsToUpdate) {
+            [itemsToUpdate removeObjectForKey:key];
+        }
     }// else {
     // work around removing an item and then querying for it again
     // on linke 349 the itemsToUpdate value will be nil
@@ -369,15 +375,19 @@ static NSString *defaultService;
 #pragma mark -
 
 - (void)removeAllItems {
-    [itemsToUpdate removeAllObjects];
+    @synchronized(itemsToUpdate) {
+        [itemsToUpdate removeAllObjects];
+    }
     [[self class] removeAllItemsForService:service accessGroup:accessGroup];
 }
 
 #pragma mark -
 
-- (void)synchronize {    
-    for (NSString *key in itemsToUpdate) {
-        [[self class] setData:[itemsToUpdate objectForKey:key] forKey:key service:service accessGroup:accessGroup];
+- (void)synchronize {
+    @synchronized(itemsToUpdate) {
+        for (NSString *key in itemsToUpdate) {
+            [[self class] setData:[itemsToUpdate objectForKey:key] forKey:key service:service accessGroup:accessGroup];
+        }
     }
 }
 
